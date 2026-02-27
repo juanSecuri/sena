@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Pruebas Farmacia API</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f7f6; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto 20px; border-top: 4px solid #0056b3;}
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; background: #0056b3; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; font-weight: bold;}
+        button:hover { background: #004494; }
+        .error { color: red; font-size: 0.9em; display: none; margin-top: -5px; margin-bottom: 10px;}
+        #resultados { margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+<h2 style="text-align: center; color: #333;">💊 Módulo de Pruebas (Spring Boot)</h2>
+
+<div class="card">
+    <h3>🔍 HU-01: Buscador Predictivo</h3>
+    <input type="text" id="busqueda" placeholder="Ingrese nombre (Ej. Para)..." maxlength="50">
+    <div id="errorBusqueda" class="error">¡No se permiten caracteres especiales raros!</div>
+    <button onclick="buscar()">Buscar Medicamento</button>
+    <ul id="resultados"></ul>
+</div>
+
+<div class="card">
+    <h3>📦 HU-02: Registrar Medicamento</h3>
+    <input type="text" id="nombreMed" placeholder="Nombre comercial" required minlength="3" maxlength="50">
+    <input type="number" id="precioMed" placeholder="Precio ($)" required min="50" max="1000000" step="0.01">
+    <button onclick="registrar()">Guardar en Inventario</button>
+</div>
+
+<script>
+    // Consumir el API GET
+    function buscar() {
+        const termino = document.getElementById('busqueda').value;
+        fetch('/api/farmacia/buscar?termino=' + termino)
+            .then(response => response.json())
+            .then(data => {
+                const ul = document.getElementById('resultados');
+                ul.innerHTML = '';
+                if(data.length === 0) { ul.innerHTML = '<li style="color:red;">No hay coincidencias</li>'; }
+                data.forEach(med => {
+                    ul.innerHTML += `<li><b>${med.nombre}</b> - $${med.precio}</li>`;
+                });
+            });
+    }
+
+    // Consumir el API POST
+    function registrar() {
+        const nombre = document.getElementById('nombreMed').value;
+        const precio = document.getElementById('precioMed').value;
+
+        // Validación manual de campos vacíos o valores absurdos para las pruebas
+        if(!nombre || nombre.length < 3) { alert("ERROR VALIDACIÓN: El nombre debe tener mínimo 3 letras."); return; }
+        if(!precio || precio <= 0) { alert("ERROR VALIDACIÓN: El precio no puede estar vacío ni ser negativo."); return; }
+
+        const medicamento = { nombre: nombre, precio: parseFloat(precio) };
+
+        fetch('/api/farmacia/registrar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(medicamento)
+        })
+        .then(response => response.text())
+        .then(msg => {
+            alert("✅ ÉXITO: " + msg);
+            document.getElementById('nombreMed').value = '';
+            document.getElementById('precioMed').value = '';
+        });
+    }
+</script>
+</body>
+</html>
